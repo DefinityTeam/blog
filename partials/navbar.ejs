@@ -1,0 +1,35 @@
+<style>
+    #navbar {
+        position: sticky;
+        top: 0;
+        background-color: rgb(255, 255, 255);
+        border: 2px solid #a9a9a9;
+        padding: 15px;
+    }
+
+    .navbar-item {
+        display: inline-block;
+        color: black;
+        text-align: center;
+        text-decoration: none;
+        /* padding: 5px; */
+        margin-right: 15px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        #navbar {
+            background-color: rgb(17, 17, 17);
+            border: 2px solid #000000;
+        }
+        .navbar-item {
+            color:white
+        }
+    }
+</style>
+<div id="navbar">
+    <a href="https://definityteam.com" class="navbar-item">Home</a>
+    <a href="https://definityteam.com/join" class="navbar-item">Join</a>
+    <a href="https://vapour.definityteam.com" class="navbar-item">Vapour</a>
+    <a href="https://podcasts.definityteam.com" class="navbar-item">Podcasts</a>
+    <a href="/" class="navbar-item">Blog</a>
+</div>
