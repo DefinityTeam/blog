@@ -6,13 +6,13 @@ import path from 'path';
 import bcrypt from 'bcrypt';
 const saltRounds: number = 10
 
+dotenv.config();
 if (!process.env.master_key) {
     console.log('You have not specified a master key hash in your environment.');
     process.exit(1);
 }
 
 const masterkey: string = process.env.master_key
-dotenv.config();
 let app = express();
 
 app.use(express.json())
