@@ -1,20 +1,27 @@
 const port: number = 8080
 import express from 'express';
-import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
-import mysql from "mysql";
-import ejs from 'ejs';
+import mysql from 'mysql';
 import path from 'path';
+import bcrypt from 'bcrypt';
+const saltRounds: number = 10
 
+if (!process.env.master_key) {
+    console.log('You have not specified a master key hash in your environment.');
+    process.exit(1);
+}
+
+const masterkey: string = process.env.master_key
 dotenv.config();
 let app = express();
-app.use(bodyParser.urlencoded({ extended: false, limit: '1mb' }));
+
+app.use(express.json())
 
 app.set('views', path.join(path.resolve('.'), 'views'))
 app.set('view engine', 'ejs');
 
 app.use((req, res, next) => {
-    let host;
+    let host: string;
     // res.append('Strict-Transport-Security', 'max-age=300; includeSubDomains; preload');
     host = `http://${req.hostname}`;
     if (port !== 80) { host = `${host}:${port}`}
@@ -52,17 +59,36 @@ let connection: mysql.Connection = mysql.createConnection({
 
 app.post('/upload', (req, res) => {
     if (!req.body['body'] || !req.body['master_key']) return res.sendStatus(400);
-    console.log([req.body['master_key'], process.env.master_key])
-    if (req.body['master_key'] !== process.env.master_key) return res.sendStatus(403);
-     
-    connection.query(`INSERT INTO posts (username, body) VALUES ('master', '${req.body['body']}')`, (error: string, results: Array<Object>) => {
+    bcrypt.compare(req.body['master_key'], masterkey, function(err, result) {
+        if (err) { console.log(err); return res.sendStatus(500); }
+        if (result !== true) { return res.sendStatus(403); }
+    
+        connection.query(`INSERT INTO posts (username, body) VALUES ('master', '${req.body['body']}')`, (error: string, results: Array<Object>) => {
+            if (error) {
+                console.log(error);
+                res.sendStatus(500);
+            } else {
+                res.sendStatus(200);
+            }
+        }); 
+    });
+});
+
+app.get('/', (req, res) => {
+
+    connection.query(`SELECT * FROM posts`, (error: string, results: Array<Object>) => {
         if (error) {
             console.log(error);
             res.sendStatus(500);
         } else {
-            res.sendStatus(200);
+            res.status(200).render('../views/index.ejs', {
+                host: app.get('host'),
+                posts: results
+            });
         }
-    }); 
+    });
+
+
 });
 
 app.get('*', (req, res) => {
