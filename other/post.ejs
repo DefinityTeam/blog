@@ -76,23 +76,16 @@
             <span style="font-size: 100%;">The blog from the people behind a few things that respect humanity.</span>
         </div>
         <br>
-        <div style="text-align: center;">
-            <h1>Latest Posts</h1>
-            <% posts.forEach(post => { %>
-                <span>
-                    <b><%= post.title %></b> 
-                    by 
-                    <% if (post.username == 'master')  { %>
-                        <b>the Definity team</b>
-                    <% } else { %>
-                        <b><%- post.username %></b>
-                    <% } %>
-                </span>
-                <br>
-            <% }) %>
-        </div>
+        <div class="background-color"><br>
+            <div style="text-align: center;">
+                <h1><%= post.title %></h1>
+            </div>
+            <div style="padding:10px;white-space: pre-wrap;">
+                <%= post.body %>
+            </div>
+        <br><br></div>
         <br>
-        <footer style="text-align: center">
+        <footer>
             <%- include('../partials/footer'); %>
         </footer>
 </body>

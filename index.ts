@@ -57,26 +57,74 @@ let connection: mysql.Connection = mysql.createConnection({
     database: process.env.db_database
 });
 
-app.post('/upload', (req, res) => {
-    if (!req.body['body'] || !req.body['master_key']) return res.sendStatus(400);
-    bcrypt.compare(req.body['master_key'], masterkey, function(err, result) {
-        if (err) { console.log(err); return res.sendStatus(500); }
-        if (result !== true) { return res.sendStatus(403); }
-    
-        connection.query(`INSERT INTO posts (username, body) VALUES ('master', '${req.body['body']}')`, (error: string, results: Array<Object>) => {
-            if (error) {
-                console.log(error);
-                res.sendStatus(500);
-            } else {
-                res.sendStatus(200);
-            }
-        }); 
-    });
+// Admin
+app.get('/admin/:action', (req, res) => {
+    switch (req.params.action) {
+        case 'upload':
+            res.send('upload landing page')
+        case 'edit':
+            res.send('edit landing page')
+        default: res.status(404).render('../other/404'); 
+    }
 });
 
-app.get('/', (req, res) => {
+app.post('/admin/:action', (req, res) => {
+    switch (req.params.action) {
+        case 'upload':
+            if (!req.body['title'] || !req.body['tagline'] || !req.body['body'] || !req.body['master_key']) return res.sendStatus(400);
+            bcrypt.compare(req.body['master_key'], masterkey, function(err, result) {
+                if (err) { console.log(err); return res.sendStatus(500); }
+                if (result !== true) { return res.sendStatus(403); }
+            
+                connection.query(`INSERT INTO posts (username, title, tagline, body, time) VALUES ('master', ${mysql.escape(req.body['title'])}, ${mysql.escape(req.body['tagline'])}, ${mysql.escape(req.body['body'])}, '${+new Date()}')`, (error: string, results: Array<Object>) => {
+                    if (error) {
+                        console.log(error);
+                        res.sendStatus(500);
+                    } else {
+                        res.sendStatus(200);
+                    }
+                }); 
+            });
+            break;
+        case 'edit':
+            if (!req.body['id']) return res.sendStatus(400);
+            res.send('this should edit post')
+            break;
+        default:
+            return res.status(405).send('405 Method Not Allowed\n\nSorry, you can\'t access our website with that method.\n\nPlease use GET to access our website, and it\'s information.\n\nWhat were you even trying to do, anyways? Come work with us and help us out: https://definityteam.com/join\n');
+    };
+});
 
-    connection.query(`SELECT * FROM posts`, (error: string, results: Array<Object>) => {
+// Blog posts (swag SQL)
+app.get('/post/:id', (req, res) => {
+    connection.query(`SELECT * FROM posts WHERE ${mysql.escape(req.params.id)}=id`, (error: string, results: Array<Object>) => {
+        if (error) {
+            console.log(error);
+            res.sendStatus(500);
+        } else {
+            if (!results[0]) { res.status(404).render('../other/404'); };
+            res.status(200).render('../other/post.ejs', {
+                host: app.get('host'),
+                post: results[0]
+            });
+        }
+    });
+})
+
+app.post('/post/:id', (req, res) => {
+    connection.query(`SELECT * FROM posts WHERE ${mysql.escape(req.params.id)}=id`, (error: string, results: Array<Object>) => {
+        if (error) {
+            console.log(error);
+            res.sendStatus(500);
+        } else {
+            if (!results[0]) { res.status(404).render('../other/404'); };
+            res.status(200).send(results[0]);
+        }
+    });
+})
+
+app.get('/', (req, res) => {
+    connection.query(`SELECT * FROM posts ORDER BY time DESC LIMIT 5`, (error: string, results: Array<Object>) => {
         if (error) {
             console.log(error);
             res.sendStatus(500);
@@ -87,10 +135,9 @@ app.get('/', (req, res) => {
             });
         }
     });
-
-
 });
 
+// The usual
 app.get('*', (req, res) => {
     res.status(200).render(`${req.path.split('/')[1]}`, { host: app.get('host') }, function(err, data) {
         if(err) {
@@ -103,8 +150,7 @@ app.get('*', (req, res) => {
 });
 
 app.all('*', (req, res) => {
-    res.status(405).send('405 Method Not Allowed\n\nSorry, you can\'t access our website with that method.\n\nPlease use GET to access our website, and it\'s information.\n\nWhat were you even trying to do, anyways? Come work with us and help us out: https://definityteam.com/join\n');
-    return;
+    return res.status(405).send('405 Method Not Allowed\n\nSorry, you can\'t access our website with that method.\n\nPlease use GET to access our website, and it\'s information.\n\nAlternatively, you can POST directly to a post link to get the metadata. If you have any other use cases, come help us out: https://definityteam.com/join\n');
 });
 
 app.listen(port, () => { console.log(`Online on port ${port}`) });
