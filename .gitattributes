@@ -1,4 +1,5 @@
 *.ejs -linguist-detectable
 *.ejs linguist-detectable=false
 *.ejs linguist-documentation=false
-
+*.sql linguist-detectable=true
+*.sql linguist-language=sql
