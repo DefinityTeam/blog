@@ -4,6 +4,9 @@ import dotenv from 'dotenv';
 import mysql from 'mysql';
 import path from 'path';
 import bcrypt from 'bcrypt';
+import * as MarkdownIt from 'markdown-it';
+import { RSA_NO_PADDING } from 'constants';
+import { hostname } from 'os';
 const saltRounds: number = 10
 
 dotenv.config();
@@ -11,6 +14,13 @@ if (!process.env.master_key) {
     console.log('You have not specified a master key hash in your environment.');
     process.exit(1);
 }
+
+let connection: mysql.Connection = mysql.createConnection({
+    host: process.env.db_host,
+    user: process.env.db_user,
+    password: process.env.db_password,
+    database: process.env.db_database
+});
 
 const masterkey: string = process.env.master_key
 let app = express();
@@ -50,49 +60,45 @@ app.use((req, res, next) => {
 
 app.use(express.static(path.join(path.resolve('.'), 'static')));
 
-let connection: mysql.Connection = mysql.createConnection({
-    host: process.env.db_host,
-    user: process.env.db_user,
-    password: process.env.db_password,
-    database: process.env.db_database
-});
-
 // Admin
-app.get('/admin/:action', (req, res) => {
-    switch (req.params.action) {
-        case 'upload':
-            res.send('upload landing page')
-        case 'edit':
-            res.send('edit landing page')
-        default: res.status(404).render('../other/404'); 
-    }
+app.get('/admin/post', (req, res) => {
+    res.send('upload landing page')
 });
 
-app.post('/admin/:action', (req, res) => {
-    switch (req.params.action) {
-        case 'upload':
-            if (!req.body['title'] || !req.body['tagline'] || !req.body['body'] || !req.body['master_key']) return res.sendStatus(400);
-            bcrypt.compare(req.body['master_key'], masterkey, function(err, result) {
-                if (err) { console.log(err); return res.sendStatus(500); }
-                if (result !== true) { return res.sendStatus(403); }
+app.get('/admin/edit/:id', (req, res) => {
+    connection.query(`SELECT * FROM posts WHERE ${mysql.escape(req.params.id)}=id`, (error: string, results: Array<Object>) => {
+        if (error) {
+            console.log(error);
+            res.sendStatus(500);
+        } else {
+            res.render('../other/edit', { 
+                host: app.get('host'),
+                post: results[0] 
+            })
+        };
+    });
+});
+
+app.post('/admin/post', (req, res) => {
+        if (!req.body['title'] || !req.body['tagline'] || !req.body['body'] || !req.body['master_key']) return res.sendStatus(400);
+        bcrypt.compare(req.body['master_key'], masterkey, function(err, result) {
+            if (err) { console.log(err); return res.sendStatus(500); }
+            if (result !== true) { return res.sendStatus(403); }
             
-                connection.query(`INSERT INTO posts (username, title, tagline, body, time) VALUES ('master', ${mysql.escape(req.body['title'])}, ${mysql.escape(req.body['tagline'])}, ${mysql.escape(req.body['body'])}, '${+new Date()}')`, (error: string, results: Array<Object>) => {
-                    if (error) {
-                        console.log(error);
-                        res.sendStatus(500);
-                    } else {
-                        res.sendStatus(200);
-                    }
-                }); 
-            });
-            break;
-        case 'edit':
-            if (!req.body['id']) return res.sendStatus(400);
-            res.send('this should edit post')
-            break;
-        default:
-            return res.status(405).send('405 Method Not Allowed\n\nSorry, you can\'t access our website with that method.\n\nPlease use GET to access our website, and it\'s information.\n\nWhat were you even trying to do, anyways? Come work with us and help us out: https://definityteam.com/join\n');
-    };
+            connection.query(`INSERT INTO posts (username, title, tagline, body, time) VALUES ('master', ${mysql.escape(req.body['title'])}, ${mysql.escape(req.body['tagline'])}, ${mysql.escape(req.body['body'])}, '${+new Date()}')`, (error: string, results: Array<Object>) => {
+                if (error) {
+                    console.log(error);
+                    res.sendStatus(500);
+                } else {
+                    res.sendStatus(200);
+                }
+            }); 
+        });
+});
+
+app.post('/admin/edit/:id', (req, res) => {
+    if (!req.body['id']) return res.sendStatus(400);
+    res.send('this should edit post');
 });
 
 // Blog posts (swag SQL)
