@@ -5,6 +5,8 @@ This repository hosts the Definity blog. It's made in [TypeScript](https://types
 By default, it runs on port 8080, but you can modify it on the first line of `index.ts` / `index.js`. **However, if you use production, then please make sure ports 80 and 443 are available, as the specified port is ignored in production.**
 
 ## Running
+No guarantees any of this will work yet. Apologies.
+
 Open a terminal, and setup if you haven't done `git clone` yet:
 ```
 $ > git clone https://github.com/DefinityTeam/blog

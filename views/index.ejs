@@ -78,6 +78,9 @@
         <br>
         <div style="text-align: center;">
             <h1>Latest Posts</h1>
+            <% if (!posts.length) { %>
+                <p>No posts yet. Check back here soon!</p>
+            <% } else { %>
             <% posts.forEach(post => { %>
                 <span>
                     <b><%= post.title %></b> 
@@ -89,7 +92,7 @@
                     <% } %>
                 </span>
                 <br>
-            <% }) %>
+            <% })}; %>
         </div>
         <br>
         <footer style="text-align: center">

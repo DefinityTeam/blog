@@ -61,9 +61,9 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(path.resolve('.'), 'static')));
 
 // Admin
-app.get('/admin/post', (req, res) => {
+/* app.get('/admin/post', (req, res) => {
     res.send('upload landing page')
-});
+}); */
 
 app.get('/admin/edit/:id', (req, res) => {
     connection.query(`SELECT * FROM posts WHERE ${mysql.escape(req.params.id)}=id`, (error: string, results: Array<Object>) => {
